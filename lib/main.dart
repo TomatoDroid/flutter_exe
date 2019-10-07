@@ -1,67 +1,154 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(MyApp());
-
-TextStyle blackStyle =
-    TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black);
-TextStyle redStyle =
-    TextStyle(fontWeight: FontWeight.normal, fontSize: 20, color: Colors.red);
+void main() {
+  return runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+      theme: ThemeData(primaryColor: Colors.lightBlue[800]),
+      home: MyHomePage(title: 'Custom UI'));
+}
+
+class MyHomePage extends StatelessWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        body: TabBarView(
+          children: <Widget>[
+            ParallelWidget(),
+            ScrollNotificationWidget(),
+            ScrollControllerWidget(),
+          ],
+        ),
+        bottomNavigationBar: TabBar(
+          tabs: <Widget>[
+            Tab(icon: Icon(Icons.home), text: "视差"),
+            Tab(icon: Icon(Icons.rss_feed), text: "Notification"),
+            Tab(icon: Icon(Icons.perm_identity), text: "Controller"),
+          ],
+          unselectedLabelColor: Colors.grey,
+          labelColor: Colors.blue,
+          indicatorSize: TabBarIndicatorSize.label,
+          indicatorColor: Colors.black,
+        ),
+      ),
+    );
+  }
+}
+
+class ParallelWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: <Widget>[
+        SliverAppBar(
+          title: Text('CustomScrollView Demo'),
+          floating: true,
+          flexibleSpace: Image.network(
+              "https://media-cdn.tripadvisor.com/media/photo-s/13/98/8f/c2/great-wall-hiking-tours.jpg",
+              fit: BoxFit.cover),
+          expandedHeight: 250,
+        ),
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+              (context, index) => ListTile(title: Text('Item $index')),
+              childCount: 100),
+        )
+      ],
+    );
+  }
+}
+
+class ScrollNotificationWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
+      title: 'Scroll Notification Demo',
       home: Scaffold(
-          appBar: AppBar(
-            title: Text('Text'),
+        appBar: AppBar(title: Text('ScrollController Demo')),
+        body: NotificationListener<ScrollNotification>(
+          onNotification: (scrollNotification) {
+            if (scrollNotification is ScrollStartNotification) {
+              print('start');
+            } else if (scrollNotification is ScrollUpdateNotification) {
+              print('update');
+            } else if (scrollNotification is ScrollEndNotification) {
+              print('end');
+            }
+          },
+          child: ListView.builder(
+            itemCount: 30 ,
+            itemBuilder: (context, index) => ListTile(title: Text("item $index"),),
           ),
-          body: Column(
-            children: <Widget>[
-              Text.rich(
-                TextSpan(children: <TextSpan>[
-                  TextSpan(
-                      text: '文本是试图系统中常见的控件，他用来显示一段特定的字符串，类似dsadsadsa',
-                      style: blackStyle),
-                  TextSpan(text: 'Adnroid', style: redStyle),
-                  TextSpan(text: '中的', style: blackStyle),
-                  TextSpan(text: 'TextVidw', style: redStyle)
-                ]),
-                textAlign: TextAlign.center,
-              ),
-              Image.asset('images/logo.png'),
-              Text('dat1'),
-              FloatingActionButton(
-                  onPressed: () => print('FloatingActionButton parsed'),
-                  child: Text('btn')),
-              RaisedButton(
-                  onPressed: () => print('RaisedButton parsed'),
-                  child: Text('btn')),
-              FlatButton(
-                  onPressed: () => print('FlatButton parsed'),
-                  child: Text('btn')),
-              FlatButton(
-                  onPressed: () => print('定制的FlatButton'),
-                  color: Colors.yellow,
-                  shape: BeveledRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0)),
-                  colorBrightness: Brightness.light,
-                  child: Row(children: <Widget>[Icon(Icons.add), Text('add')]))
-            ],
-          )),
+        ),
+      ),
     );
+  }
+}
+
+class ScrollControllerWidget  extends StatefulWidget {
+  @override 
+  State<StatefulWidget> createState() => _ScrollControllerState();
+}
+
+class _ScrollControllerState extends State<ScrollControllerWidget>{
+  ScrollController _controller;
+  bool isToTop = false;
+  @override
+  void initState() {
+    _controller = ScrollController();
+    _controller.addListener(() {
+      if(_controller.offset > 1000) {
+        setState(() {
+          isToTop = true;
+        });
+      } else if(_controller.offset < 300) {
+        setState(() {
+          isToTop = false;
+        });
+      }
+    });
+    super.initState();
+  }
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Scroll Controller Widget')),
+      body: Column(
+        children: <Widget>[
+          Container(
+            height: 40.0,
+            child: RaisedButton(onPressed: (isToTop ? () {
+              if(isToTop) {
+                _controller.animateTo(.0, 
+                duration: Duration(milliseconds: 200), 
+                curve: Curves.ease);
+              }
+            } : null),
+            child: Text('Top'),),
+          ),
+          Expanded(
+            child: ListView.builder(
+              controller: _controller,
+              itemCount: 100,
+              itemBuilder: (context, index) => 
+                ListTile(title: Text("index $index"),),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose(){
+    _controller.dispose();
+    super.dispose();
   }
 }
